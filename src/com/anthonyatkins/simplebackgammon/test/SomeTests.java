@@ -11,6 +11,7 @@ import com.anthonyatkins.simplebackgammon.model.GameDice;
 import com.anthonyatkins.simplebackgammon.model.GameDie;
 import com.anthonyatkins.simplebackgammon.model.Dugout;
 import com.anthonyatkins.simplebackgammon.model.Game;
+import com.anthonyatkins.simplebackgammon.model.Match;
 import com.anthonyatkins.simplebackgammon.model.Move;
 import com.anthonyatkins.simplebackgammon.model.Moves;
 import com.anthonyatkins.simplebackgammon.model.Piece;
@@ -24,12 +25,13 @@ import com.anthonyatkins.simplebackgammon.view.GameView;
 public class SomeTests extends AndroidTestCase {
 	
 	public void testDieEquals() throws Throwable {
-		Game game = new Game();
-		Player player = new Player(Constants.WHITE,game);
+		Match match = new Match();
+		Game game = new Game(match);
+		Player player = new Player(Constants.WHITE);
 		
-		GameDie die = new GameDie(2, Constants.WHITE, game, player);
-		GameDie die2 = new GameDie(2, Constants.WHITE, game, player);
-		GameDie die6 = new GameDie(6, Constants.WHITE, game, player);
+		GameDie die = new GameDie(2, Constants.WHITE, player);
+		GameDie die2 = new GameDie(2, Constants.WHITE, player);
+		GameDie die6 = new GameDie(6, Constants.WHITE, player);
 		
 		assertFalse("Dice with different values are equal", die2.equals(die6));
 		
@@ -64,9 +66,9 @@ public class SomeTests extends AndroidTestCase {
 	}
 	
 	public void testPlayerEquals() throws Throwable {
-		Player player1 = new Player(Constants.BLACK, new Game()); 
-		Player player2 = new Player(Constants.BLACK, new Game()); 
-		Player player3 = new Player(Constants.WHITE, new Game());
+		Player player1 = new Player(Constants.BLACK); 
+		Player player2 = new Player(Constants.BLACK); 
+		Player player3 = new Player(Constants.WHITE);
 		
 		player1.getDice().roll(1,2);
 		player2.getDice().roll(1,2);
@@ -84,12 +86,13 @@ public class SomeTests extends AndroidTestCase {
 	}
 	
 	public void testGameEquals() throws Throwable {
-		Game game1 = new Game();
+		Match match = new Match();
+		Game game1 = new Game(match);
 
 		// Test to make sure the same object equals itself
 		assertTrue("Game object is not equal to itself", game1.equals(game1));
 
-		Game game2 = new Game();
+		Game game2 = new Game(match);
 
 		// Games won't be equal unless we make the dice equal
 		game1.getBlackPlayer().getDice().roll(1, 1);
@@ -103,31 +106,34 @@ public class SomeTests extends AndroidTestCase {
 		// Test to make sure that a game with a different piece arrangement is not equal;
 		int[] bothPlayersCanMoveOutConfiguration = {0,-3,-3,-3,-3,-3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,3,3,3,3,0,0,0};
 
-		Game game3 = new Game();
+		Game game3 = new Game(match);
 		game3.getBoard().initializeSlots(bothPlayersCanMoveOutConfiguration);
 		assertFalse("Different boards are mistakenly detected as equal", game2.equals(game3));
 	}
 	
 	public void testMoveEquals() throws Throwable {
-		Game game = new Game();
-		Player player = new Player(Constants.WHITE, game);
+		Match match = new Match();
+		Game game = new Game(match);
+		Player player = new Player(Constants.WHITE);
 		Slot startSlot = new Slot(Slot.DOWN,1);
 		Slot endSlot = new Slot(Slot.DOWN,0);
 		Dugout dugout = new Dugout(-1,Constants.WHITE,game);
 		
-		GameDie die1 = new GameDie(1, Constants.WHITE, game, player);
-		GameDie die2 = new GameDie(2, Constants.WHITE, game, player);
-		GameDie die6 = new GameDie(6, Constants.WHITE, game, player);
+		GameDie die1 = new GameDie(1, Constants.WHITE, player);
+		GameDie die2 = new GameDie(2, Constants.WHITE, player);
+		GameDie die6 = new GameDie(6, Constants.WHITE, player);
 
+		Turn turn = new Turn(player,new SimpleDice(player.getColor()),game);
+		
 		// Test to see if two moves by the same player, from the same square to the same square are equal
-		Move move1 = new Move(startSlot,endSlot,die1);
-		Move move2 = new Move(startSlot,endSlot,die1);
+		Move move1 = new Move(startSlot,endSlot,die1, turn);
+		Move move2 = new Move(startSlot,endSlot,die1, turn);
 		assertTrue("Two identical moves are not equal",move1.equals(move2));
 		
 		// Test to see if two moves with the same start and end square but different dice
 		// This happens a lot in the end game.
-		Move move3 = new Move(startSlot,dugout,die2);
-		Move move4 = new Move(startSlot,dugout,die6);
+		Move move3 = new Move(startSlot,dugout,die2, turn);
+		Move move4 = new Move(startSlot,dugout,die6, turn);
 		assertFalse("Two different moves equal",move3.equals(move4));
 	}
 	
@@ -136,22 +142,27 @@ public class SomeTests extends AndroidTestCase {
 	 * The tests are left here to test the equals method rather than the uniqueness of the entries.
 	 */
 	public void testMovesEquals() throws Throwable {
-		Game game = new Game();
-		Player player = new Player(Constants.WHITE, game);
+		Match match = new Match();
+		Game game = new Game(match);
+		Player player = new Player(Constants.WHITE);
 		Slot startSlot = new Slot(Slot.DOWN,1);
 		Slot startSlot2 = new Slot(Slot.DOWN,2);
 		Slot endSlot = new Slot(Slot.DOWN,2);
 		Slot endSlot2 = new Slot(Slot.DOWN,3);
 		Dugout dugout = new Dugout(-1,Constants.WHITE,game);
-		GameDie die = new GameDie(1, Constants.WHITE, game, player);
-		GameDie die2 = new GameDie(2, Constants.WHITE, game, player);
-		GameDie die6 = new GameDie(6, Constants.WHITE, game, player);		
+
+		
+		GameDie die = new GameDie(1, Constants.WHITE, player);
+		GameDie die2 = new GameDie(2, Constants.WHITE, player);
+		GameDie die6 = new GameDie(6, Constants.WHITE, player);		
+		
+		Turn turn = new Turn(player,new SimpleDice(player.getColor()),game);
 		
 		Moves moves1 = new Moves();
 		Moves moves2 = new Moves();
 		
-		moves1.add(new Move(startSlot, endSlot, die));
-		moves2.add(new Move(startSlot, endSlot, die));
+		moves1.add(new Move(startSlot, endSlot, die, turn));
+		moves2.add(new Move(startSlot, endSlot, die, turn));
 		
 		assertTrue("Two sets of moves with the same lone entry don't match", moves1.equals(moves2));
 		
@@ -159,15 +170,15 @@ public class SomeTests extends AndroidTestCase {
 		
 		// different start slots
 		Moves moves4 = new Moves();
-		moves4.add(new Move(startSlot,dugout,die2));
-		moves4.add(new Move(startSlot2,dugout,die6));
+		moves4.add(new Move(startSlot,dugout,die2, turn));
+		moves4.add(new Move(startSlot2,dugout,die6, turn));
 		assertEquals("Moves with different start slots are not treated as distinct",2,moves4.size());
 
 		
 		// different end slots
 		Moves moves5 = new Moves();
-		moves5.add(new Move(startSlot,dugout,die2));
-		moves5.add(new Move(startSlot,endSlot2,die6));
+		moves5.add(new Move(startSlot,dugout,die2, turn));
+		moves5.add(new Move(startSlot,endSlot2,die6, turn));
 		assertEquals("Moves with different end slots are not treated as distinct",2,moves5.size());
 		
 		
@@ -175,30 +186,32 @@ public class SomeTests extends AndroidTestCase {
 		// different dice aren't screened out
 		Moves moves6 = new Moves();
 		
-		moves6.add(new Move(startSlot,dugout,die2));
-		moves6.add(new Move(startSlot,dugout,die6));
+		moves6.add(new Move(startSlot,dugout,die2, turn));
+		moves6.add(new Move(startSlot,dugout,die6, turn));
 		assertEquals("Moves with different dice are not treated as distinct",2,moves6.size());
 	}
 	
 	public void testTurnEquals()  throws Throwable {
-		Game game = new Game();
-		Player player = new Player(Constants.BLACK, game);
-		GameDice dice = new GameDice(Constants.BLACK, game, player);
-		Turn turn1 = new Turn(player,dice);
-		Turn turn2 = new Turn(player,dice);
+		Match match = new Match();
+		Game game = new Game(match);
+		Player player = new Player(Constants.BLACK);
+		GameDice dice = new GameDice(Constants.BLACK, player);
+		Turn turn1 = new Turn(player,dice, game);
+		Turn turn2 = new Turn(player,dice, game);
 
 		assertTrue("Two turns with the same player and dice don't match", turn1.equals(turn2));
 	}
 	
 	public void testBoardStateSave() throws Throwable {
-		Board board1 = new Board(new Game());
-		Board board2 = new Board(new Game());
+		Match match = new Match();
+		Board board1 = new Board(new Game(match));
+		Board board2 = new Board(new Game(match));
 		
 		// We have to manually set all the dice to the same thing, as they're random by default
-		board1.getLeftPit().dice.roll(1,1);
-		board1.getRightPit().dice.roll(1,1);
-		board2.getLeftPit().dice.roll(1,1);
-		board2.getRightPit().dice.roll(1,1);
+		board1.getLeftPit().getDice().roll(1,1);
+		board1.getRightPit().getDice().roll(1,1);
+		board2.getLeftPit().getDice().roll(1,1);
+		board2.getRightPit().getDice().roll(1,1);
 		
 		// Move the first piece from each slot two slots toward its goal
 		for (Piece piece : board1.getBlackPieces()) {
@@ -221,22 +234,22 @@ public class SomeTests extends AndroidTestCase {
 	
 	public void testIsBlocked() throws Throwable {
 		Slot blackPairedSlot = new Slot(Slot.UP,0);
-		blackPairedSlot.pieces.addMultiple(2,Constants.BLACK,0);
+		blackPairedSlot.getPieces().addMultiple(2,Constants.BLACK,0);
 		assertTrue("Slot with 2 black pieces failed to block white piece",blackPairedSlot.isBlocked(Constants.WHITE));
 		assertFalse("Slot with 2 black pieces failed to allow black piece",blackPairedSlot.isBlocked(Constants.BLACK));
 
 		Slot blackUnpairedSlot = new Slot(Slot.UP,0);
-		blackUnpairedSlot.pieces.addMultiple(1,Constants.BLACK,0);
+		blackUnpairedSlot.getPieces().addMultiple(1,Constants.BLACK,0);
 		assertFalse("Slot with 1 black piece failed to block white piece",blackUnpairedSlot.isBlocked(Constants.WHITE));
 		assertFalse("Slot with 1 black piece failed to allow black piece",blackUnpairedSlot.isBlocked(Constants.BLACK));
 
 		Slot whitePairedSlot = new Slot(Slot.UP,0);
-		whitePairedSlot.pieces.addMultiple(2,Constants.WHITE,0);
+		whitePairedSlot.getPieces().addMultiple(2,Constants.WHITE,0);
 		assertTrue("Slot with 2 white pieces failed to block black piece",whitePairedSlot.isBlocked(Constants.BLACK));
 		assertFalse("Slot with 2 white pieces failed to allow white piece",whitePairedSlot.isBlocked(Constants.WHITE));
 		
 		Slot whiteUnpairedSlot = new Slot(Slot.UP,0);
-		whiteUnpairedSlot.pieces.addMultiple(1,Constants.WHITE,0);
+		whiteUnpairedSlot.getPieces().addMultiple(1,Constants.WHITE,0);
 		assertFalse("Slot with 1 black piece failed to block white piece",whiteUnpairedSlot.isBlocked(Constants.BLACK));
 		assertFalse("Slot with 1 black piece failed to allow black piece",whiteUnpairedSlot.isBlocked(Constants.WHITE));
 	}
@@ -244,7 +257,8 @@ public class SomeTests extends AndroidTestCase {
 	
 	public void testHighestAndLowestPiece() throws Throwable {
 		/* Test Available moves with the default pieces, it's just easier */
-		Game game = new Game();
+		Match match = new Match();
+		Game game = new Game(match);
 		assertEquals("White's lowest starting slot was not 5.",5,game.getWhitePlayer().getPieces().first().position);
 		assertEquals("White's highest starting slot was not 23.",23,game.getWhitePlayer().getPieces().last().position);
 		assertEquals("Black's lowest starting slot was not 0.",0,game.getBlackPlayer().getPieces().first().position);
@@ -255,57 +269,68 @@ public class SomeTests extends AndroidTestCase {
 	public void testMovingTrailingPieceOut() throws Throwable {
 		int[] bothPlayersCanMoveOutConfiguration = {0,-3,-3,-3,-3,-3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,3,3,3,3,0,0,0};
 		
-		Game game = new Game();
+		Match match = new Match();
+		Game game = new Game(match);
 		GameView gameView = new GameView(this.getContext(),game);
 		GameController gameController = new GameController(gameView);
 		game.getBoard().initializeSlots(bothPlayersCanMoveOutConfiguration);
 		
-		game.setActivePlayer(game.getBlackPlayer());
+		Player blackPlayer = game.getBlackPlayer();
+		game.setActivePlayer(blackPlayer);
 		game.getActivePlayer().getDice().roll(6,6);
 
+		Turn blackTurn = new Turn(blackPlayer,new SimpleDice(blackPlayer.getColor()),game); 
+		
 		Moves expectedBlackMoves = new Moves();
-		expectedBlackMoves.add(new Move(game.getBoard().getPlaySlots().get(19),game.getBoard().getBlackOut(),game.getActivePlayer().getDice().get(0)));
+		expectedBlackMoves.add(new Move(game.getBoard().getPlaySlots().get(19),game.getBoard().getBlackOut(),game.getActivePlayer().getDice().get(0), blackTurn));
 		
 		gameController.getAllPlayerMoves();
 		assertTrue("Black player can't move out of the 20th slot with a 6.",expectedBlackMoves.equals(game.getActivePlayer().getMoves()));
 		
-		game.setActivePlayer(game.getWhitePlayer());
-		game.getActivePlayer().getDice().roll(6,6);
+		Player whitePlayer = game.getWhitePlayer();
+		game.setActivePlayer(whitePlayer);
+		Turn whiteTurn = new Turn(whitePlayer,new SimpleDice(whitePlayer.getColor()),game); 
+		whitePlayer.getDice().roll(6,6);
 
 		Moves expectedWhiteMoves = new Moves();
-		expectedWhiteMoves.add(new Move(game.getBoard().getPlaySlots().get(4),game.getBoard().getWhiteOut(),game.getActivePlayer().getDice().get(0)));
+		expectedWhiteMoves.add(new Move(game.getBoard().getPlaySlots().get(4),game.getBoard().getWhiteOut(),whitePlayer.getDice().get(0), whiteTurn));
 		
 		gameController.getAllPlayerMoves();
-		assertTrue("White player can't move out of the 5th slot with a 6.",expectedWhiteMoves.equals(game.getActivePlayer().getMoves()));
+		assertTrue("White player can't move out of the 5th slot with a 6.",expectedWhiteMoves.equals(whitePlayer.getMoves()));
 	}
 	
 	public void testGetAvailableMovesFromSlot() throws Throwable {
 		/* Test Available moves with the default pieces, it's just easier */
-		Game game = new Game();
+		Match match = new Match();
+		Game game = new Game(match);
 		GameView gameView = new GameView(this.getContext(),game);
 		GameController gameController = new GameController(gameView);
 		
 		game.setActivePlayer(game.getBlackPlayer());
 		game.getActivePlayer().getDice().roll(1, 5);
 		
+		Turn blackTurn = new Turn(game.getActivePlayer(),game.getActivePlayer().getDice(),game);
+		
 		Slot trailingBlackSlot = game.getBoard().getPlaySlots().get(0);
 		Moves expectedBlackSlotMoves = new Moves();
-		expectedBlackSlotMoves.add(new Move(trailingBlackSlot, game.getBoard().getPlaySlots().get(1),game.getActivePlayer().getDice().get(0)));
+		expectedBlackSlotMoves.add(new Move(trailingBlackSlot, game.getBoard().getPlaySlots().get(1),game.getActivePlayer().getDice().get(0), blackTurn));
 		gameController.getAvailableMovesFromSlot(trailingBlackSlot);
 		assertTrue("Starting black moves with a roll of 1 and 5 failed", expectedBlackSlotMoves.equals(game.getActivePlayer().getMoves()));
 
 		game.setActivePlayer(game.getWhitePlayer());
 		game.getActivePlayer().getDice().roll(1, 5);
+		
+		Turn whiteTurn = new Turn(game.getActivePlayer(),game.getActivePlayer().getDice(),game);
 
 		Slot trailingWhiteSlot = game.getBoard().getPlaySlots().get(23);
 		Moves expectedWhiteSlotMoves = new Moves();
-		expectedWhiteSlotMoves.add(new Move(trailingWhiteSlot, game.getBoard().getPlaySlots().get(22),game.getActivePlayer().getDice().get(0)));
+		expectedWhiteSlotMoves.add(new Move(trailingWhiteSlot, game.getBoard().getPlaySlots().get(22),game.getActivePlayer().getDice().get(0), whiteTurn));
 		gameController.getAvailableMovesFromSlot(trailingWhiteSlot);
 		assertTrue("Starting white moves with a roll of 1 and 5 failed", expectedWhiteSlotMoves.equals(game.getActivePlayer().getMoves()));
 	}
 
 	public void testPlayerCanGoOut() throws Throwable {
-		Game game = new Game();
+		Game game = new Game(new Match());
 		GameView gameView = new GameView(this.getContext(),game);
 		GameController gameController = new GameController(gameView);
 		
@@ -334,7 +359,7 @@ public class SomeTests extends AndroidTestCase {
 		int[] blackCanMoveOffBarConfiguration = {0,-2,-2,0,0,-2,-2,0,0,0,0,0,0,0,0,0,0,0,0,2,2,2,2,2,2,0,2,0};
 		int[] whiteCanMoveOffBarConfiguration = {0,-2,-2,-2,-2,-2,-2,0,0,0,0,0,0,0,0,0,0,0,0,2,2,0,0,2,2,0,0,2};
 
-		Game game = new Game();
+		Game game = new Game(new Match());
 		GameView gameView = new GameView(this.getContext(),game);
 		GameController gameController = new GameController(gameView);
 
@@ -346,10 +371,11 @@ public class SomeTests extends AndroidTestCase {
 		gameController.getAvailableMovesFromBar();
 		assertTrue("Black failed to be stuck on bar when all slots are taken", game.getActivePlayer().getMoves().size() == 0);
 
+		Turn blackTurn = new Turn(game.getBlackPlayer(),game.getBlackPlayer().getDice(),game); 
 		game.getBoard().initializeSlots(blackCanMoveOffBarConfiguration);
 		Moves expectedBlackMoves = new Moves();
-		expectedBlackMoves.add(new Move(game.getBoard().getBar(),game.getBoard().getPlaySlots().get(2),game.getActivePlayer().getDice().get(0)));
-		expectedBlackMoves.add(new Move(game.getBoard().getBar(),game.getBoard().getPlaySlots().get(3),game.getActivePlayer().getDice().get(1)));
+		expectedBlackMoves.add(new Move(game.getBoard().getBar(),game.getBoard().getPlaySlots().get(2),game.getActivePlayer().getDice().get(0), blackTurn));
+		expectedBlackMoves.add(new Move(game.getBoard().getBar(),game.getBoard().getPlaySlots().get(3),game.getActivePlayer().getDice().get(1), blackTurn));
 		gameController.getAvailableMovesFromBar();
 		assertTrue("Black failed to be able to move off the bar into an empty slot.",expectedBlackMoves.equals(game.getActivePlayer().getMoves()));
 
@@ -357,6 +383,7 @@ public class SomeTests extends AndroidTestCase {
 		gameController.getAvailableMovesFromBar();
 		assertTrue("Black failed to be stuck on bar when roll doesn't match free slots",game.getActivePlayer().getMoves().size() == 0);
 		
+		Turn whiteTurn = new Turn(game.getBlackPlayer(),game.getWhitePlayer().getDice(),game); 
 		game.setActivePlayer(game.getWhitePlayer());
 		game.getActivePlayer().getDice().roll(3, 4);
 		game.getBoard().initializeSlots(whiteStuckOnBarConfiguration);
@@ -367,8 +394,8 @@ public class SomeTests extends AndroidTestCase {
 
 		game.getBoard().initializeSlots(whiteCanMoveOffBarConfiguration);
 		Moves expectedWhiteMoves = new Moves();
-		expectedWhiteMoves.add(new Move(game.getBoard().getBar(),game.getBoard().getPlaySlots().get(21),game.getActivePlayer().getDice().get(0)));
-		expectedWhiteMoves.add(new Move(game.getBoard().getBar(),game.getBoard().getPlaySlots().get(20),game.getActivePlayer().getDice().get(1)));
+		expectedWhiteMoves.add(new Move(game.getBoard().getBar(),game.getBoard().getPlaySlots().get(21),game.getActivePlayer().getDice().get(0), whiteTurn));
+		expectedWhiteMoves.add(new Move(game.getBoard().getBar(),game.getBoard().getPlaySlots().get(20),game.getActivePlayer().getDice().get(1), whiteTurn));
 		gameController.getAvailableMovesFromBar();
 		assertTrue("White failed to be able to move off the bar into an empty slot.",expectedWhiteMoves.equals(game.getActivePlayer().getMoves()));
 
@@ -381,7 +408,7 @@ public class SomeTests extends AndroidTestCase {
 		int[] blackWonConfiguration = {3,-2,-2,-2,-2,-2,-2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,15,0,0};
 		int[] whiteWonConfiguration = {15,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,2,2,2,2,3,0,0};
 		
-		Game game = new Game();
+		Game game = new Game(new Match());
 		GameView gameView = new GameView(this.getContext(),game);
 		GameController gameController = new GameController(gameView);
 		
@@ -414,7 +441,7 @@ public class SomeTests extends AndroidTestCase {
 		/* A configuration where each player only has their trailing pieces from the initial setup */
 		int[] allMovesPossibleConfiguration = {0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,-2,0,0,0};
 		
-		Game game = new Game();
+		Game game = new Game(new Match());
 		GameView gameView = new GameView(getContext(),game);
 		GameController gameController = new GameController(gameView);
 
@@ -444,7 +471,7 @@ public class SomeTests extends AndroidTestCase {
 	}
 	
 	public void testCloning() throws Throwable {
-		Game baselineGame = new Game();
+		Game baselineGame = new Game(new Match());
 
 		// set the basic conditions
 		baselineGame.setActivePlayer(baselineGame.getBlackPlayer());
@@ -458,12 +485,12 @@ public class SomeTests extends AndroidTestCase {
 	}
 	
 	public void testMoveAndUndo() throws Throwable {
-		Game baselineGame = new Game();
+		Game baselineGame = new Game(new Match());
 		
 		// set the basic conditions
 		baselineGame.setActivePlayer(baselineGame.getBlackPlayer());
 		baselineGame.getActivePlayer().getDice().roll(1, 2);
-		baselineGame.setCurrentTurn(new Turn(baselineGame.getActivePlayer(),new GameDice(baselineGame.getActivePlayer().getDice())));
+		baselineGame.setCurrentTurn(new Turn(baselineGame.getActivePlayer(),new GameDice(baselineGame.getActivePlayer().getDice()), baselineGame));
 		GameView baselineGameView = new GameView(getContext(),baselineGame);
 		GameController baselineGameController = new GameController(baselineGameView);
 		baselineGameController.getAllPlayerMoves();
@@ -487,12 +514,12 @@ public class SomeTests extends AndroidTestCase {
 		assertTrue("Modified game is not equal to original after undoing two moves.", baselineGame.equals(modifiedGame));
 	}
 	public void testMoveDoublesAndUndo() throws Throwable {
-		Game baselineGame = new Game();
+		Game baselineGame = new Game(new Match());
 		
 		// set the basic conditions
 		baselineGame.setActivePlayer(baselineGame.getBlackPlayer());
 		baselineGame.getActivePlayer().getDice().roll(2, 2);
-		baselineGame.setCurrentTurn(new Turn(baselineGame.getActivePlayer(),new GameDice(baselineGame.getActivePlayer().getDice())));
+		baselineGame.setCurrentTurn(new Turn(baselineGame.getActivePlayer(),new GameDice(baselineGame.getActivePlayer().getDice()), baselineGame));
 		GameView baselineGameView = new GameView(getContext(),baselineGame);
 		GameController baselineGameController = new GameController(baselineGameView);
 		baselineGameController.getAllPlayerMoves();
