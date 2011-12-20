@@ -1,11 +1,17 @@
 package com.anthonyatkins.simplebackgammon.test;
 
+import java.security.KeyStore.LoadStoreParameter;
 import java.util.Iterator;
 
-import android.test.ActivityUnitTestCase;
+import junit.framework.TestCase;
+
+import android.database.sqlite.SQLiteDatabase;
+import android.os.Bundle;
 
 import com.anthonyatkins.simplebackgammon.Constants;
-import com.anthonyatkins.simplebackgammon.controller.GameController;
+import com.anthonyatkins.simplebackgammon.db.DbOpenHelper;
+import com.anthonyatkins.simplebackgammon.db.DbUtils;
+import com.anthonyatkins.simplebackgammon.exception.InvalidMoveException;
 import com.anthonyatkins.simplebackgammon.model.Board;
 import com.anthonyatkins.simplebackgammon.model.Dugout;
 import com.anthonyatkins.simplebackgammon.model.Game;
@@ -19,13 +25,8 @@ import com.anthonyatkins.simplebackgammon.model.SimpleDice;
 import com.anthonyatkins.simplebackgammon.model.SimpleDie;
 import com.anthonyatkins.simplebackgammon.model.Slot;
 import com.anthonyatkins.simplebackgammon.model.Turn;
-import com.anthonyatkins.simplebackgammon.view.GameView;
 
-public class SomeTests extends ActivityUnitTestCase {
-
-	public SomeTests(Class activityClass) {
-		super(activityClass);
-	}
+public class SomeTests extends TestCase {
 
 	public void testDieEquals() throws Throwable {
 		SimpleDie die = new SimpleDie(2, Constants.WHITE);
@@ -183,13 +184,18 @@ public class SomeTests extends ActivityUnitTestCase {
 	
 	public void testTurnEquals()  throws Throwable {
 		Player blackPlayer = new Player();
-		Match match = new Match(blackPlayer,blackPlayer,1);
+		Player whitePlayer = new Player();
+		Match match = new Match(blackPlayer,whitePlayer,1);
 		Game game = new Game(match,Constants.BLACK);
 		
 		Turn turn1 = new Turn(blackPlayer, game,Constants.BLACK);
-		Turn turn2 = new Turn(turn1);
+		Turn turn2 = new Turn(turn1,game);
 
-		assertTrue("Two turns with the same player and dice don't match", turn1.equals(turn2));
+		boolean equals = turn1.equals(turn2);
+		assertTrue("Two turns with the same player and dice don't match.", equals);
+		
+		Turn turn3 = new Turn(whitePlayer, game,Constants.WHITE);
+		assertFalse("Two turns with different players and dice match.", turn1.equals(turn3));
 	}
 	
 	public void testBoardStateSave() throws Throwable {
@@ -300,8 +306,8 @@ public class SomeTests extends ActivityUnitTestCase {
 		Slot trailingBlackSlot = game.getBoard().getPlaySlots().get(0);
 		Moves expectedBlackSlotMoves = new Moves();
 		expectedBlackSlotMoves.add(new Move(trailingBlackSlot, game.getBoard().getPlaySlots().get(1),game.getCurrentTurn().getDice().get(0), blackPlayer));
-		game.findAvailableMovesFromSlot(trailingBlackSlot);
-		assertTrue("Starting black moves with a roll of 1 and 5 failed", expectedBlackSlotMoves.equals(game.getCurrentTurn().getPotentialMoves()));
+		Moves blackDetectedMoves = game.findAvailableMovesFromSlot(trailingBlackSlot);
+		assertTrue("Starting black moves with a roll of 1 and 5 failed", expectedBlackSlotMoves.equals(blackDetectedMoves));
 
 
 		new Turn(whitePlayer,game,Constants.WHITE);
@@ -310,8 +316,8 @@ public class SomeTests extends ActivityUnitTestCase {
 		Slot trailingWhiteSlot = game.getBoard().getPlaySlots().get(23);
 		Moves expectedWhiteSlotMoves = new Moves();
 		expectedWhiteSlotMoves.add(new Move(trailingWhiteSlot, game.getBoard().getPlaySlots().get(22),game.getCurrentTurn().getDice().get(0), whitePlayer));
-		game.findAvailableMovesFromSlot(trailingWhiteSlot);
-		assertTrue("Starting white moves with a roll of 1 and 5 failed", expectedWhiteSlotMoves.equals(game.getCurrentTurn().getPotentialMoves()));
+		Moves whiteDetectedMoves = game.findAvailableMovesFromSlot(trailingWhiteSlot);
+		assertTrue("Starting white moves with a roll of 1 and 5 failed", expectedWhiteSlotMoves.equals(whiteDetectedMoves));
 	}
 
 	public void testPlayerCanGoOut() throws Throwable {
@@ -406,7 +412,7 @@ public class SomeTests extends ActivityUnitTestCase {
 		assertTrue(game.playerWon());		
 		
 		/* check to make sure the black player doesn't win when they only have a few pieces in the dugout */
-		new Turn(blackPlayer,game,Constants.WHITE);
+		new Turn(blackPlayer,game,Constants.BLACK);
 		game.getBoard().initializeSlots(whiteWonConfiguration);
 		assertFalse(game.playerWon());
 
@@ -468,21 +474,19 @@ public class SomeTests extends ActivityUnitTestCase {
 		
 		// clone the game
 		Game modifiedGame = new Game(baselineGame);
-		GameView gameView = new GameView(getActivity(),modifiedGame);
-		GameController gameController = new GameController(gameView,getActivity());
 		
 		// Test making and then undoing a single move
 		modifiedGame.findAllPotentialMoves();
-		modifiedGame.getCurrentTurn().makeMove(0,1,modifiedGame.getCurrentTurn().getDice().get(0),blackPlayer);
+		modifiedGame.getCurrentTurn().makeMove(0,1);
 		
 		assertFalse("Modified game is still equal to original.", baselineGame.equals(modifiedGame));
 		
-		gameController.undoMove();
-		gameController.undoMove();
-		gameController.setGameState(Game.MOVE_PICK_SOURCE);
+		modifiedGame.getCurrentTurn().undoMove();
+		modifiedGame.getCurrentTurn().undoMove();
 
 		assertTrue("Modified game is not equal to original after undoing two moves.", baselineGame.equals(modifiedGame));
 	}
+
 	public void testMoveDoublesAndUndo() throws Throwable {
 		Player blackPlayer = new Player();
 		Match match = new Match(blackPlayer,blackPlayer,1);
@@ -494,31 +498,23 @@ public class SomeTests extends ActivityUnitTestCase {
 		
 		// clone the game
 		Game modifiedGame = new Game(baselineGame);
-		GameView gameView = new GameView(getActivity(),modifiedGame);
-		GameController gameController = new GameController(gameView,getActivity());
 		
 		// Test making and then undoing a double move
-		SimpleDice dice = modifiedGame.getCurrentTurn().getDice();
 		modifiedGame.findAllPotentialMoves();
-		modifiedGame.getCurrentTurn().makeMove(0,2,dice.get(0),blackPlayer);
-		modifiedGame.getCurrentTurn().makeMove(0,2,dice.get(1),blackPlayer);
-		modifiedGame.getCurrentTurn().makeMove(2,4,dice.get(2),blackPlayer);
-		modifiedGame.getCurrentTurn().makeMove(2,4,dice.get(3),blackPlayer);
+		modifiedGame.getCurrentTurn().makeMove(0,2);
+		modifiedGame.getCurrentTurn().makeMove(0,2);
+		modifiedGame.getCurrentTurn().makeMove(2,4);
+		modifiedGame.getCurrentTurn().makeMove(2,4);
 		
 		assertFalse("Modified game is still equal to original.", baselineGame.equals(modifiedGame));
 		
-		gameController.undoMove();
-		gameController.undoMove();
-		gameController.setGameState(Game.MOVE_PICK_SOURCE);
+		modifiedGame.getCurrentTurn().undoMove();
+		modifiedGame.getCurrentTurn().undoMove();
 		
 		assertTrue("Modified game is not equal to original after undoing a pair of moves when rolling doubles.", baselineGame.equals(modifiedGame));
 	}
 	
 	public void testUndoFromBar() {
 		//FIXME:  Test undoing when a piece is bumped to the bar, make sure it ends back on its original square.
-	}
-	
-	public void testGameSaveAndLoad() {
-		// FIXME:  Create a sample game, save it to the database, load it, and compare the original to the restored game
 	}
 }
