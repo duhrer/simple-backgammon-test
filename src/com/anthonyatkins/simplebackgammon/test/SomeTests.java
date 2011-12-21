@@ -1,16 +1,10 @@
 package com.anthonyatkins.simplebackgammon.test;
 
-import java.security.KeyStore.LoadStoreParameter;
 import java.util.Iterator;
 
 import junit.framework.TestCase;
 
-import android.database.sqlite.SQLiteDatabase;
-import android.os.Bundle;
-
 import com.anthonyatkins.simplebackgammon.Constants;
-import com.anthonyatkins.simplebackgammon.db.DbOpenHelper;
-import com.anthonyatkins.simplebackgammon.db.DbUtils;
 import com.anthonyatkins.simplebackgammon.exception.InvalidMoveException;
 import com.anthonyatkins.simplebackgammon.model.Board;
 import com.anthonyatkins.simplebackgammon.model.Dugout;
@@ -86,7 +80,9 @@ public class SomeTests extends TestCase {
 
 		// Games won't be equal unless we make the dice equal
 		game1.getCurrentTurn().getDice().roll(1,1);
+		game1.getCurrentTurn().findAllPotentialMoves();
 		game2.getCurrentTurn().getDice().roll(1,1);
+		game2.getCurrentTurn().findAllPotentialMoves();
 		
 		// Test to make sure that two default games are equal to one another
 		assertTrue("Two default games are not equal to one another", game1.equals(game2));
@@ -97,6 +93,7 @@ public class SomeTests extends TestCase {
 		Match match3 = new Match(new Player("Black Player"),new Player("White Player"),1);
 		Game game3 = new Game(match3,Constants.BLACK);
 		game3.getBoard().initializeSlots(bothPlayersCanMoveOutConfiguration);
+		game3.getCurrentTurn().findAllPotentialMoves();
 		assertFalse("Different boards are mistakenly detected as equal", game2.equals(game3));
 	}
 	
@@ -110,6 +107,7 @@ public class SomeTests extends TestCase {
 		Dugout dugout = new Dugout(-1,Constants.WHITE,game);
 		
 		Turn turn = new Turn(player,game,Constants.WHITE);
+		turn.findAllPotentialMoves();
 		GameDie die1 = new GameDie(1, Constants.WHITE, turn);
 		GameDie die2 = new GameDie(2, Constants.WHITE, turn);
 		GameDie die6 = new GameDie(6, Constants.WHITE, turn);
@@ -143,6 +141,7 @@ public class SomeTests extends TestCase {
 
 		
 		Turn turn = new Turn(whitePlayer,game,Constants.WHITE);
+		turn.findAllPotentialMoves();
 		
 		GameDie die = new GameDie(1, Constants.WHITE, turn);
 		GameDie die2 = new GameDie(2, Constants.WHITE, turn);
@@ -189,12 +188,15 @@ public class SomeTests extends TestCase {
 		Game game = new Game(match,Constants.BLACK);
 		
 		Turn turn1 = new Turn(blackPlayer, game,Constants.BLACK);
+		turn1.findAllPotentialMoves();
 		Turn turn2 = new Turn(turn1,game);
+		turn2.findAllPotentialMoves();
 
 		boolean equals = turn1.equals(turn2);
 		assertTrue("Two turns with the same player and dice don't match.", equals);
 		
 		Turn turn3 = new Turn(whitePlayer, game,Constants.WHITE);
+		turn3.findAllPotentialMoves();
 		assertFalse("Two turns with different players and dice match.", turn1.equals(turn3));
 	}
 	
@@ -276,21 +278,21 @@ public class SomeTests extends TestCase {
 		Player blackPlayer = game.getBlackPlayer();
 		new Turn(blackPlayer,game,Constants.BLACK); 
 		game.getCurrentTurn().getDice().roll(6,6);
+		game.getCurrentTurn().findAllPotentialMoves();
 		
 		Moves expectedBlackMoves = new Moves();
 		expectedBlackMoves.add(new Move(game.getBoard().getPlaySlots().get(19),game.getBoard().getBlackOut(),game.getCurrentTurn().getDice().get(0), blackPlayer));
 		
-		game.findAllPotentialMoves();
 		assertTrue("Black player can't move out of the 20th slot with a 6.",expectedBlackMoves.equals(game.getCurrentTurn().getPotentialMoves()));
 		
 		Player whitePlayer = game.getWhitePlayer();
 		new Turn(whitePlayer,game,Constants.WHITE); 
 		game.getCurrentTurn().getDice().roll(6,6);
+		game.getCurrentTurn().findAllPotentialMoves();
 
 		Moves expectedWhiteMoves = new Moves();
 		expectedWhiteMoves.add(new Move(game.getBoard().getPlaySlots().get(4),game.getBoard().getWhiteOut(),game.getCurrentTurn().getDice().get(0), whitePlayer));
 		
-		game.findAllPotentialMoves();
 		assertTrue("White player can't move out of the 5th slot with a 6.",expectedWhiteMoves.equals(game.getCurrentTurn().getPotentialMoves()));
 	}
 	
@@ -306,17 +308,18 @@ public class SomeTests extends TestCase {
 		Slot trailingBlackSlot = game.getBoard().getPlaySlots().get(0);
 		Moves expectedBlackSlotMoves = new Moves();
 		expectedBlackSlotMoves.add(new Move(trailingBlackSlot, game.getBoard().getPlaySlots().get(1),game.getCurrentTurn().getDice().get(0), blackPlayer));
-		Moves blackDetectedMoves = game.findAvailableMovesFromSlot(trailingBlackSlot);
+		Moves blackDetectedMoves = game.getCurrentTurn().findAllPotentialMoves().getMovesForStartSlot(trailingBlackSlot);
 		assertTrue("Starting black moves with a roll of 1 and 5 failed", expectedBlackSlotMoves.equals(blackDetectedMoves));
 
 
-		new Turn(whitePlayer,game,Constants.WHITE);
+		Turn whiteTurn = new Turn(whitePlayer,game,Constants.WHITE);
+		whiteTurn.findAllPotentialMoves();
 		game.getCurrentTurn().getDice().roll(1, 5);
 		
 		Slot trailingWhiteSlot = game.getBoard().getPlaySlots().get(23);
 		Moves expectedWhiteSlotMoves = new Moves();
 		expectedWhiteSlotMoves.add(new Move(trailingWhiteSlot, game.getBoard().getPlaySlots().get(22),game.getCurrentTurn().getDice().get(0), whitePlayer));
-		Moves whiteDetectedMoves = game.findAvailableMovesFromSlot(trailingWhiteSlot);
+		Moves whiteDetectedMoves = game.getCurrentTurn().findAllPotentialMoves().getMovesForStartSlot(trailingWhiteSlot);
 		assertTrue("Starting white moves with a roll of 1 and 5 failed", expectedWhiteSlotMoves.equals(whiteDetectedMoves));
 	}
 
@@ -329,16 +332,19 @@ public class SomeTests extends TestCase {
 		/* test the default pieces, neither player should be able to go out */
 		assertFalse("Black player was able to go out from the starting position.",game.playerCanMoveOut());
 
-		new Turn(whitePlayer,game,Constants.WHITE);
+		Turn whiteTurn = new Turn(whitePlayer,game,Constants.WHITE);
+		whiteTurn.findAllPotentialMoves();
 		assertFalse("White player was able to go out from the starting position.",game.playerCanMoveOut());
 
 		/* testing with both players ready to go out */
 		int[] bothPlayersCanMoveOutConfiguration = {0,-3,-3,-3,-3,-3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,3,3,3,3,0,0,0};
 		game.getBoard().initializeSlots(bothPlayersCanMoveOutConfiguration);
-		new Turn(blackPlayer,game,Constants.BLACK);
+		Turn blackTurn = new Turn(blackPlayer,game,Constants.BLACK);
+		blackTurn.findAllPotentialMoves();
 		assertTrue("Black player was not able to go out with all pieces in the end row.",game.playerCanMoveOut());
 		
-		new Turn(whitePlayer,game,Constants.WHITE);
+		Turn whiteTurn2 = new Turn(whitePlayer,game,Constants.WHITE);
+		whiteTurn2.findAllPotentialMoves();
 		assertTrue("White player was not able to go out with all pieces in the end row.",game.playerCanMoveOut());
 	}
 	
@@ -355,41 +361,41 @@ public class SomeTests extends TestCase {
 		Match match = new Match(blackPlayer,whitePlayer,1);
 		Game game = new Game(match,Constants.BLACK);
 
-		game.getCurrentTurn().getDice().roll(3, 4);
 		game.getBoard().initializeSlots(blackStuckOnBarConfiguration);
+		game.getCurrentTurn().getDice().roll(3, 4);
+		game.getCurrentTurn().findAllPotentialMoves();
 		
 		/* the list should be empty, we have intentionally blocked the moves of both players */
-		game.getAvailableMovesFromBar();
 		assertTrue("Black failed to be stuck on bar when all slots are taken", game.getCurrentTurn().getPotentialMoves().size() == 0);
 
 		game.getBoard().initializeSlots(blackCanMoveOffBarConfiguration);
+		game.getCurrentTurn().findAllPotentialMoves();
 		Moves expectedBlackMoves = new Moves();
 		expectedBlackMoves.add(new Move(game.getBoard().getBar(),game.getBoard().getPlaySlots().get(2),game.getCurrentTurn().getDice().get(0), blackPlayer));
 		expectedBlackMoves.add(new Move(game.getBoard().getBar(),game.getBoard().getPlaySlots().get(3),game.getCurrentTurn().getDice().get(1), blackPlayer));
-		game.getAvailableMovesFromBar();
 		assertTrue("Black failed to be able to move off the bar into an empty slot.",expectedBlackMoves.equals(game.getCurrentTurn().getPotentialMoves()));
 
 		game.getCurrentTurn().getDice().roll(5, 6);
-		game.getAvailableMovesFromBar();
+		game.getCurrentTurn().findAllPotentialMoves();
 		assertTrue("Black failed to be stuck on bar when roll doesn't match free slots",game.getCurrentTurn().getPotentialMoves().size() == 0);
 		
-		new Turn(game.getBlackPlayer(),game,Constants.WHITE); 
+		new Turn(game.getBlackPlayer(),game,Constants.WHITE);
 		game.getCurrentTurn().getDice().roll(3, 4);
 		game.getBoard().initializeSlots(whiteStuckOnBarConfiguration);
+		game.getCurrentTurn().findAllPotentialMoves();
 		
 		/* the list should be empty, we have intentionally blocked the moves of both players */
-		game.getAvailableMovesFromBar();
 		assertTrue("White failed to be stuck on bar when all entry slots are blocked.", game.getCurrentTurn().getPotentialMoves().size() == 0);
 
 		game.getBoard().initializeSlots(whiteCanMoveOffBarConfiguration);
+		game.getCurrentTurn().findAllPotentialMoves();
 		Moves expectedWhiteMoves = new Moves();
 		expectedWhiteMoves.add(new Move(game.getBoard().getBar(),game.getBoard().getPlaySlots().get(21),game.getCurrentTurn().getDice().get(0), whitePlayer));
 		expectedWhiteMoves.add(new Move(game.getBoard().getBar(),game.getBoard().getPlaySlots().get(20),game.getCurrentTurn().getDice().get(1), whitePlayer));
-		game.getAvailableMovesFromBar();
 		assertTrue("White failed to be able to move off the bar into an empty slot.",expectedWhiteMoves.equals(game.getCurrentTurn().getPotentialMoves()));
 
 		game.getCurrentTurn().getDice().roll(5, 6);
-		game.getAvailableMovesFromBar();
+		game.getCurrentTurn().findAllPotentialMoves();
 		assertTrue("White failed to be stuck on bar when roll doesn't match free slots",game.getCurrentTurn().getPotentialMoves().size() == 0);
 	}
 
@@ -407,17 +413,20 @@ public class SomeTests extends TestCase {
 		assertTrue(game.playerWon());
 
 		/* check to make sure the white player wins when all their pieces are in the dugout */
-		new Turn(whitePlayer,game,Constants.WHITE);
+		Turn whiteTurn = new Turn(whitePlayer,game,Constants.WHITE);
+		whiteTurn.findAllPotentialMoves();
 		game.getBoard().initializeSlots(whiteWonConfiguration);
 		assertTrue(game.playerWon());		
 		
 		/* check to make sure the black player doesn't win when they only have a few pieces in the dugout */
-		new Turn(blackPlayer,game,Constants.BLACK);
+		Turn blackTurn = new Turn(blackPlayer,game,Constants.BLACK);
+		blackTurn.findAllPotentialMoves();
 		game.getBoard().initializeSlots(whiteWonConfiguration);
 		assertFalse(game.playerWon());
 
 		/* check to make sure the white player doesn't win when they only have a few pieces in the dugout */
-		new Turn(whitePlayer,game,Constants.WHITE);
+		Turn whiteTurn2 = new Turn(whitePlayer,game,Constants.WHITE);
+		whiteTurn2.findAllPotentialMoves();
 		game.getBoard().initializeSlots(blackWonConfiguration);
 		assertFalse(game.playerWon());
 	}
@@ -427,25 +436,24 @@ public class SomeTests extends TestCase {
 		int[] allMovesPossibleConfiguration = {0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,-2,0,0,0};
 		
 		Player whitePlayer = new Player();
-		Match match = new Match(whitePlayer,whitePlayer,1);
+		Match match = new Match(new Player(),whitePlayer,1);
 		Game game = new Game(match,Constants.BLACK);
 
 		game.getBoard().initializeSlots(allMovesPossibleConfiguration);
-		game.findAllPotentialMoves();
 		assertTrue("Black failed to have any moves from a starting position where all moves are possible",game.getCurrentTurn().getPotentialMoves().size() > 0);
 		
 		Iterator<SimpleDie> blackDiceIterator = game.getCurrentTurn().getDice().iterator();
 		while (blackDiceIterator.hasNext()) { blackDiceIterator.next().setUsed(); }
-		game.findAllPotentialMoves();
+		game.getCurrentTurn().findAllPotentialMoves();
 		assertTrue("Black has moves even when all dice are flagged as used",game.getCurrentTurn().getPotentialMoves().size() == 0);
 		
 		new Turn(whitePlayer,game,Constants.WHITE);
-		game.findAllPotentialMoves();
+		game.getCurrentTurn().findAllPotentialMoves();
 		assertTrue("White failed to have any moves from a starting position where all moves are possible",game.getCurrentTurn().getPotentialMoves().size() > 0);
 		
 		Iterator<SimpleDie> whiteDiceIterator = game.getCurrentTurn().getDice().iterator();
 		while (whiteDiceIterator.hasNext()) { whiteDiceIterator.next().setUsed(); }
-		game.findAllPotentialMoves();
+		game.getCurrentTurn().findAllPotentialMoves();
 		assertTrue("White has moves even when all dice are flagged as used",game.getCurrentTurn().getPotentialMoves().size() == 0);
 	}
 	
@@ -455,12 +463,13 @@ public class SomeTests extends TestCase {
 
 		// set the basic conditions
 		baselineGame.getCurrentTurn().getDice().roll(1, 2);
+		baselineGame.getCurrentTurn().findAllPotentialMoves();
 				
 		// clone the game
 		Game modifiedGame = new Game(baselineGame);
 
 		// Check to see if the games are equal
-		assertEquals("Cloned game is not a faithful copy of the original", baselineGame, modifiedGame);
+		assertTrue("Cloned game is not a faithful copy of the original", baselineGame.equals(modifiedGame));
 	}
 	
 	public void testMoveAndUndo() throws Throwable {
@@ -470,13 +479,12 @@ public class SomeTests extends TestCase {
 		
 		// set the basic conditions
 		baselineGame.getCurrentTurn().getDice().roll(1, 2);
-		baselineGame.findAllPotentialMoves();
+		baselineGame.getCurrentTurn().findAllPotentialMoves();
 		
 		// clone the game
 		Game modifiedGame = new Game(baselineGame);
 		
 		// Test making and then undoing a single move
-		modifiedGame.findAllPotentialMoves();
 		modifiedGame.getCurrentTurn().makeMove(0,1);
 		
 		assertFalse("Modified game is still equal to original.", baselineGame.equals(modifiedGame));
@@ -489,20 +497,21 @@ public class SomeTests extends TestCase {
 
 	public void testMoveDoublesAndUndo() throws Throwable {
 		Player blackPlayer = new Player();
-		Match match = new Match(blackPlayer,blackPlayer,1);
+		Match match = new Match(blackPlayer,new Player(),1);
 		Game baselineGame = new Game(match,Constants.BLACK);
 		
 		// set the basic conditions
 		baselineGame.getCurrentTurn().getDice().roll(2, 2);
-		baselineGame.findAllPotentialMoves();
+		baselineGame.getCurrentTurn().findAllPotentialMoves();
+		
+		baselineGame.getCurrentTurn().makeMove(0,2);
+		baselineGame.getCurrentTurn().makeMove(0,2);
 		
 		// clone the game
 		Game modifiedGame = new Game(baselineGame);
+		assertTrue("Cloned game isn't equal to original.", baselineGame.equals(modifiedGame));
 		
 		// Test making and then undoing a double move
-		modifiedGame.findAllPotentialMoves();
-		modifiedGame.getCurrentTurn().makeMove(0,2);
-		modifiedGame.getCurrentTurn().makeMove(0,2);
 		modifiedGame.getCurrentTurn().makeMove(2,4);
 		modifiedGame.getCurrentTurn().makeMove(2,4);
 		
@@ -514,7 +523,22 @@ public class SomeTests extends TestCase {
 		assertTrue("Modified game is not equal to original after undoing a pair of moves when rolling doubles.", baselineGame.equals(modifiedGame));
 	}
 	
-	public void testUndoFromBar() {
-		//FIXME:  Test undoing when a piece is bumped to the bar, make sure it ends back on its original square.
+	public void testUndoFromBar() throws InvalidMoveException {
+		int[] blackCanMoveOffBarConfiguration = {0,-2,-2,0,0,-2,-2,0,0,0,0,0,0,0,0,0,0,0,0,2,2,2,2,2,2,0,2,0};
+		
+		Match match = new Match(new Player(),new Player(),1);
+		Game game = new Game(match,Constants.BLACK);
+		game.getBoard().initializeSlots(blackCanMoveOffBarConfiguration);
+		game.getCurrentTurn().getDice().roll(3, 4);
+		game.getCurrentTurn().findAllPotentialMoves();
+
+		Game clonedGame = new Game(game);
+		
+		assertTrue("No potential moves found from bar, can't test undoing.",game.getCurrentTurn().getPotentialMoves().size() > 0);
+
+		game.getCurrentTurn().makeMove(game.getCurrentTurn().getPotentialMoves().get(0));
+		game.getCurrentTurn().undoMove();
+		
+		assertTrue("Undoing a move from the bar doesn't revert the game to its previous state",game.equals(clonedGame));
 	}
 }
