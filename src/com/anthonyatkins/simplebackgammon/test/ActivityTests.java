@@ -22,7 +22,6 @@ public class ActivityTests extends ActivityInstrumentationTestCase2<TestActivity
 		Game baselineGame = new Game(match,Constants.BLACK);
 		
 		// detect the valid moves and make the first possible one
-		baselineGame.findAllPotentialMoves();
 		baselineGame.getCurrentTurn().makeMove(baselineGame.getCurrentTurn().getPotentialMoves().get(0));
 		
     	DbOpenHelper dbHelper = new DbOpenHelper(getActivity());
