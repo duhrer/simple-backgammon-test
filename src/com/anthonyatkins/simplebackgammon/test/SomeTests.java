@@ -114,14 +114,14 @@ public class SomeTests extends TestCase {
 
 		
 		// Test to see if two moves by the same player, from the same square to the same square are equal
-		Move move1 = new Move(startSlot,endSlot,die1, player);
-		Move move2 = new Move(startSlot,endSlot,die1, player);
+		Move move1 = new Move(startSlot,endSlot,die1.getValue(), player);
+		Move move2 = new Move(startSlot,endSlot,die1.getValue(), player);
 		assertTrue("Two identical moves are not equal",move1.equals(move2));
 		
 		// Test to see if two moves with the same start and end square but different dice
 		// This happens a lot in the end game.
-		Move move3 = new Move(startSlot,dugout,die2, player);
-		Move move4 = new Move(startSlot,dugout,die6, player);
+		Move move3 = new Move(startSlot,dugout,die2.getValue(), player);
+		Move move4 = new Move(startSlot,dugout,die6.getValue(), player);
 		assertFalse("Two different moves equal",move3.equals(move4));
 	}
 	
@@ -151,8 +151,8 @@ public class SomeTests extends TestCase {
 		Moves moves1 = new Moves();
 		Moves moves2 = new Moves();
 		
-		moves1.add(new Move(startSlot, endSlot, die, whitePlayer));
-		moves2.add(new Move(startSlot, endSlot, die, whitePlayer));
+		moves1.add(new Move(startSlot, endSlot, die.getValue(), whitePlayer));
+		moves2.add(new Move(startSlot, endSlot, die.getValue(), whitePlayer));
 		
 		assertTrue("Two sets of moves with the same lone entry don't match", moves1.equals(moves2));
 		
@@ -160,15 +160,15 @@ public class SomeTests extends TestCase {
 		
 		// different start slots
 		Moves moves4 = new Moves();
-		moves4.add(new Move(startSlot,dugout,die2, whitePlayer));
-		moves4.add(new Move(startSlot2,dugout,die6, whitePlayer));
+		moves4.add(new Move(startSlot,dugout,die2.getValue(), whitePlayer));
+		moves4.add(new Move(startSlot2,dugout,die6.getValue(), whitePlayer));
 		assertEquals("Moves with different start slots are not treated as distinct",2,moves4.size());
 
 		
 		// different end slots
 		Moves moves5 = new Moves();
-		moves5.add(new Move(startSlot,dugout,die2, whitePlayer));
-		moves5.add(new Move(startSlot,endSlot2,die6, whitePlayer));
+		moves5.add(new Move(startSlot,dugout,die2.getValue(), whitePlayer));
+		moves5.add(new Move(startSlot,endSlot2,die6.getValue(), whitePlayer));
 		assertEquals("Moves with different end slots are not treated as distinct",2,moves5.size());
 		
 		
@@ -176,8 +176,8 @@ public class SomeTests extends TestCase {
 		// different dice aren't screened out
 		Moves moves6 = new Moves();
 		
-		moves6.add(new Move(startSlot,dugout,die2, whitePlayer));
-		moves6.add(new Move(startSlot,dugout,die6, whitePlayer));
+		moves6.add(new Move(startSlot,dugout,die2.getValue(), whitePlayer));
+		moves6.add(new Move(startSlot,dugout,die6.getValue(), whitePlayer));
 		assertEquals("Moves with different dice are not treated as distinct",2,moves6.size());
 	}
 	
@@ -281,7 +281,7 @@ public class SomeTests extends TestCase {
 		game.getCurrentTurn().findAllPotentialMoves();
 		
 		Moves expectedBlackMoves = new Moves();
-		expectedBlackMoves.add(new Move(game.getBoard().getPlaySlots().get(19),game.getBoard().getBlackOut(),game.getCurrentTurn().getDice().get(0), blackPlayer));
+		expectedBlackMoves.add(new Move(game.getBoard().getPlaySlots().get(19),game.getBoard().getBlackOut(),game.getCurrentTurn().getDice().get(0).getValue(), blackPlayer));
 		
 		assertTrue("Black player can't move out of the 20th slot with a 6.",expectedBlackMoves.equals(game.getCurrentTurn().getPotentialMoves()));
 		
@@ -291,7 +291,7 @@ public class SomeTests extends TestCase {
 		game.getCurrentTurn().findAllPotentialMoves();
 
 		Moves expectedWhiteMoves = new Moves();
-		expectedWhiteMoves.add(new Move(game.getBoard().getPlaySlots().get(4),game.getBoard().getWhiteOut(),game.getCurrentTurn().getDice().get(0), whitePlayer));
+		expectedWhiteMoves.add(new Move(game.getBoard().getPlaySlots().get(4),game.getBoard().getWhiteOut(),game.getCurrentTurn().getDice().get(0).getValue(), whitePlayer));
 		
 		assertTrue("White player can't move out of the 5th slot with a 6.",expectedWhiteMoves.equals(game.getCurrentTurn().getPotentialMoves()));
 	}
@@ -307,7 +307,7 @@ public class SomeTests extends TestCase {
 		
 		Slot trailingBlackSlot = game.getBoard().getPlaySlots().get(0);
 		Moves expectedBlackSlotMoves = new Moves();
-		expectedBlackSlotMoves.add(new Move(trailingBlackSlot, game.getBoard().getPlaySlots().get(1),game.getCurrentTurn().getDice().get(0), blackPlayer));
+		expectedBlackSlotMoves.add(new Move(trailingBlackSlot, game.getBoard().getPlaySlots().get(1),game.getCurrentTurn().getDice().get(0).getValue(), blackPlayer));
 		Moves blackDetectedMoves = game.getCurrentTurn().findAllPotentialMoves().getMovesForStartSlot(trailingBlackSlot);
 		assertTrue("Starting black moves with a roll of 1 and 5 failed", expectedBlackSlotMoves.equals(blackDetectedMoves));
 
@@ -318,7 +318,7 @@ public class SomeTests extends TestCase {
 		
 		Slot trailingWhiteSlot = game.getBoard().getPlaySlots().get(23);
 		Moves expectedWhiteSlotMoves = new Moves();
-		expectedWhiteSlotMoves.add(new Move(trailingWhiteSlot, game.getBoard().getPlaySlots().get(22),game.getCurrentTurn().getDice().get(0), whitePlayer));
+		expectedWhiteSlotMoves.add(new Move(trailingWhiteSlot, game.getBoard().getPlaySlots().get(22),game.getCurrentTurn().getDice().get(0).getValue(), whitePlayer));
 		Moves whiteDetectedMoves = game.getCurrentTurn().findAllPotentialMoves().getMovesForStartSlot(trailingWhiteSlot);
 		assertTrue("Starting white moves with a roll of 1 and 5 failed", expectedWhiteSlotMoves.equals(whiteDetectedMoves));
 	}
@@ -371,8 +371,8 @@ public class SomeTests extends TestCase {
 		game.getBoard().initializeSlots(blackCanMoveOffBarConfiguration);
 		game.getCurrentTurn().findAllPotentialMoves();
 		Moves expectedBlackMoves = new Moves();
-		expectedBlackMoves.add(new Move(game.getBoard().getBar(),game.getBoard().getPlaySlots().get(2),game.getCurrentTurn().getDice().get(0), blackPlayer));
-		expectedBlackMoves.add(new Move(game.getBoard().getBar(),game.getBoard().getPlaySlots().get(3),game.getCurrentTurn().getDice().get(1), blackPlayer));
+		expectedBlackMoves.add(new Move(game.getBoard().getBar(),game.getBoard().getPlaySlots().get(2),game.getCurrentTurn().getDice().get(0).getValue(), blackPlayer));
+		expectedBlackMoves.add(new Move(game.getBoard().getBar(),game.getBoard().getPlaySlots().get(3),game.getCurrentTurn().getDice().get(1).getValue(), blackPlayer));
 		assertTrue("Black failed to be able to move off the bar into an empty slot.",expectedBlackMoves.equals(game.getCurrentTurn().getPotentialMoves()));
 
 		game.getCurrentTurn().getDice().roll(5, 6);
@@ -390,8 +390,8 @@ public class SomeTests extends TestCase {
 		game.getBoard().initializeSlots(whiteCanMoveOffBarConfiguration);
 		game.getCurrentTurn().findAllPotentialMoves();
 		Moves expectedWhiteMoves = new Moves();
-		expectedWhiteMoves.add(new Move(game.getBoard().getBar(),game.getBoard().getPlaySlots().get(21),game.getCurrentTurn().getDice().get(0), whitePlayer));
-		expectedWhiteMoves.add(new Move(game.getBoard().getBar(),game.getBoard().getPlaySlots().get(20),game.getCurrentTurn().getDice().get(1), whitePlayer));
+		expectedWhiteMoves.add(new Move(game.getBoard().getBar(),game.getBoard().getPlaySlots().get(21),game.getCurrentTurn().getDice().get(0).getValue(), whitePlayer));
+		expectedWhiteMoves.add(new Move(game.getBoard().getBar(),game.getBoard().getPlaySlots().get(20),game.getCurrentTurn().getDice().get(1).getValue(), whitePlayer));
 		assertTrue("White failed to be able to move off the bar into an empty slot.",expectedWhiteMoves.equals(game.getCurrentTurn().getPotentialMoves()));
 
 		game.getCurrentTurn().getDice().roll(5, 6);
@@ -490,7 +490,6 @@ public class SomeTests extends TestCase {
 		assertFalse("Modified game is still equal to original.", baselineGame.equals(modifiedGame));
 		
 		modifiedGame.getCurrentTurn().undoMove();
-		modifiedGame.getCurrentTurn().undoMove();
 
 		assertTrue("Modified game is not equal to original after undoing two moves.", baselineGame.equals(modifiedGame));
 	}
@@ -540,5 +539,23 @@ public class SomeTests extends TestCase {
 		game.getCurrentTurn().undoMove();
 		
 		assertTrue("Undoing a move from the bar doesn't revert the game to its previous state",game.equals(clonedGame));
+	}
+	
+	public void testPipsAndDice() {
+		SimpleDice dice = new SimpleDice(Constants.BLACK);
+		dice.roll(1, 2);
+		
+		assertTrue("Dice with a roll of 1 and 2 return dice for getDiceByPips(5)",dice.getDiceByPips(5).size() == 0);
+		assertTrue("Dice with a roll of 1 and 2 don't return a single die for getDiceByPips(1)",dice.getDiceByPips(1).size() == 1);
+		assertTrue("Dice with a roll of 1 and 2 don't return a single die for getDiceByPips(2)",dice.getDiceByPips(2).size() == 1);
+
+		
+		dice.roll(4,4);
+		assertTrue("Dice with a roll of 4 and 4 don't return a single die for getDiceByPips(4)",dice.getDiceByPips(4).size() == 1);
+
+		// FIXME:  These tests should be enabled when multi-move detection is implemented
+//		assertTrue("Dice with a roll of 4 and 4 don't return two dice for getDiceByPips(8)",dice.getDiceByPips(8).size() == 2);
+//		assertTrue("Dice with a roll of 4 and 4 don't return three dice for getDiceByPips(12)",dice.getDiceByPips(12).size() == 3);
+//		assertTrue("Dice with a roll of 4 and 4 don't return four dice for getDiceByPips(16)",dice.getDiceByPips(16).size() == 4);
 	}
 }
